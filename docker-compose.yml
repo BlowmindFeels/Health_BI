@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    container_name: healthbi_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: salud
+      POSTGRES_PASSWORD: salud123
+      POSTGRES_DB: salud
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salud -d salud"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: healthbi_app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://salud:salud123@db:5432/salud
+      DATA_DIR: /data
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/code/app
+      - ./datos:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
